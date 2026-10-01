@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebAR LKPD - Cepat Rambat Bunyi</title>
+<style>
+:root{--navy:#102a43;--blue:#1d70b8;--sky:#eaf6ff;--gold:#f2b134;--ink:#203040;--muted:#66788a;--card:#fff;--line:#d9e5ef}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#eef5fa;color:var(--ink)}
+header{background:linear-gradient(135deg,#102a43,#1d70b8);color:white;padding:22px 28px;position:sticky;top:0;z-index:10;box-shadow:0 3px 15px #0002}
+header h1{margin:0;font-size:clamp(22px,3vw,34px)} header p{margin:6px 0 0;opacity:.9}
+.app{display:grid;grid-template-columns:minmax(330px,43%) minmax(430px,57%);gap:16px;max-width:1600px;margin:16px auto;padding:0 16px}
+.panel{background:white;border:1px solid var(--line);border-radius:18px;box-shadow:0 5px 20px #102a4310;overflow:hidden}
+.left{padding:20px;max-height:calc(100vh - 110px);overflow:auto}.right{position:sticky;top:95px;height:calc(100vh - 110px);min-height:700px}
+section{margin-bottom:22px;padding:17px;border:1px solid var(--line);border-radius:14px;background:#fbfdff}
+h2{font-size:20px;color:var(--navy);margin:0 0 12px} h3{font-size:16px;color:var(--blue);margin:14px 0 8px}
+label{font-weight:700;font-size:13px;display:block;margin:8px 0 5px} input,select,textarea{width:100%;padding:10px 11px;border:1px solid #c8d7e4;border-radius:9px;font:inherit;background:white}
+textarea{min-height:80px;resize:vertical}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{border:0;border-radius:10px;padding:11px 15px;font-weight:800;cursor:pointer;background:var(--blue);color:white;transition:.15s}
+button:hover{transform:translateY(-1px);filter:brightness(1.04)}button.secondary{background:#e8f1f8;color:var(--navy)}button.gold{background:var(--gold);color:#172b3a}
+button.danger{background:#b33a3a}.small{font-size:12px;color:var(--muted)} .formula{background:#102a43;color:white;border-radius:12px;padding:13px;text-align:center;font-size:20px;font-weight:800;margin:10px 0}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid var(--line);padding:7px;text-align:center}th{background:#eaf6ff;color:var(--navy)}td input{padding:6px;border:0;text-align:center;min-width:55px}
+.sim{height:100%;display:flex;flex-direction:column}.simHead{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.simHead h2{margin:0}
+.stage{position:relative;flex:1;min-height:390px;background:linear-gradient(#dff3ff,#f7fcff);overflow:hidden}
+#camera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.scene{width:90%;position:relative;height:220px}.source,.listener{position:absolute;top:72px;font-size:54px;filter:drop-shadow(0 4px 3px #0002);z-index:3}.source{left:0}.listener{right:0}.line{position:absolute;left:8%;right:8%;top:105px;height:4px;background:#9bb9cc;border-radius:5px}.wave{position:absolute;top:84px;width:16px;height:42px;border:3px solid #1d70b8;border-left:0;border-top-color:transparent;border-bottom-color:transparent;border-radius:50%;opacity:0;animation:travel 2s linear infinite}.w1{left:18%}.w2{left:25%;animation-delay:.45s}.w3{left:32%;animation-delay:.9s}.w4{left:39%;animation-delay:1.35s}.w5{left:46%;animation-delay:1.8s}
+@keyframes travel{0%{transform:translateX(0) scale(.4);opacity:0}15%{opacity:1}100%{transform:translateX(430px) scale(1.5);opacity:0}}
+.distance{position:absolute;left:15%;right:15%;top:42px;text-align:center;font-weight:900;color:var(--navy)}
+.distance span{background:white;padding:6px 12px;border-radius:20px;box-shadow:0 2px 10px #0001}
+.controls{padding:15px;border-top:1px solid var(--line);background:#fff;overflow:auto;max-height:48%}.controlgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.control{background:#f8fbfe;border:1px solid var(--line);padding:12px;border-radius:12px}.value{font-weight:900;color:var(--blue);float:right}.range{width:100%;accent-color:var(--blue)}
+.result{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}.metric{background:#102a43;color:white;padding:12px;border-radius:12px;text-align:center}.metric b{display:block;font-size:20px;margin-top:4px}.status{margin-top:9px;padding:10px;border-radius:10px;background:#eaf6ff;font-weight:700;text-align:center}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.arbadge{background:#eef8ef;color:#276c3a;padding:7px 10px;border-radius:20px;font-size:12px;font-weight:800}
+canvas{width:100%;height:150px;background:white;border:1px solid var(--line);border-radius:10px;margin-top:10px}
+.progress{height:8px;background:#dce8f0;border-radius:10px;overflow:hidden;margin:8px 0}.progress>i{display:block;height:100%;width:0;background:var(--blue);transition:.3s}
+@media(max-width:950px){.app{grid-template-columns:1fr}.right{position:relative;top:0;height:auto;min-height:760px}.left{max-height:none}.controlgrid{grid-template-columns:1fr}.result{grid-template-columns:1fr 1fr}.scene{width:92%}}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}.result{grid-template-columns:1fr}.left{padding:12px}.app{padding:8px}.source,.listener{font-size:42px}.stage{min-height:350px}}
+</style>
+</head>
+<body>
+<header>
+<h1>🔊 WebAR Fisika — Cepat Rambat Bunyi</h1>
+<p>LKPD Interaktif • Eksplorasi jarak, waktu tempuh, dan medium perambatan bunyi</p>
+</header>
+
+<div class="app">
+<div class="panel left" id="lkpd">
+<section>
+<h2>1. Identitas Peserta Didik</h2>
+<div class="grid2">
+<div><label>Nama</label><input id="nama" placeholder="Nama lengkap"></div>
+<div><label>Kelas</label><input id="kelas" placeholder="XI ..."></div>
+<div><label>Kelompok</label><input id="kelompok" placeholder="Kelompok"></div>
+<div><label>Tanggal</label><input id="tanggal" type="date"></div>
+</div>
+</section>
+
+<section>
+<h2>2. Tujuan Pembelajaran</h2>
+<ol>
+<li>Menjelaskan konsep cepat rambat bunyi.</li>
+<li>Menghubungkan jarak dan waktu tempuh bunyi.</li>
+<li>Menggunakan persamaan <b>v = s/t</b>.</li>
+<li>Menganalisis pengaruh medium terhadap cepat rambat bunyi.</li>
+<li>Menyimpulkan hasil percobaan berdasarkan data.</li>
+</ol>
+</section>
+
+<section>
+<h2>3. Petunjuk Penggunaan</h2>
+<ol>
+<li>Baca sekilas materi.</li><li>Atur jarak dan medium pada simulasi.</li>
+<li>Klik <b>Mulai Percobaan</b>.</li><li>Amati waktu tempuh bunyi.</li>
+<li>Catat hasil pada tabel.</li><li>Ulangi dengan variasi jarak/medium.</li>
+<li>Jawab pertanyaan analisis dan tuliskan kesimpulan.</li>
+</ol>
+</section>
+
+<section>
+<h2>4. Sekilas Materi</h2>
+<p>Bunyi merupakan gelombang mekanik yang memerlukan medium untuk merambat. Cepat rambat bunyi menyatakan jarak yang ditempuh gelombang bunyi setiap satu satuan waktu.</p>
+<div class="formula">v = s / t</div>
+<p><b>v</b> = cepat rambat bunyi (m/s), <b>s</b> = jarak (m), dan <b>t</b> = waktu tempuh (s).</p>
+<p>Nilai pendekatan yang digunakan dalam simulasi: udara <b>340 m/s</b>, air <b>1.500 m/s</b>, dan baja <b>5.000 m/s</b>. Nilai nyata dapat dipengaruhi kondisi medium.</p>
+</section>
+
+<section>
+<h2>5. Fenomena Kontekstual Sisingaan</h2>
+<p>Dalam pertunjukan Sisingaan, bunyi dari terompet, kendang, gong, kecrek, bonang, dan kempul merambat melalui udara hingga mencapai pendengar. Jarak antara sumber bunyi dan pendengar memengaruhi waktu yang diperlukan bunyi untuk sampai.</p>
+<p><b>Masalah:</b> “Berapa cepat bunyi dari sumber dapat mencapai telinga pendengar pada jarak tertentu?”</p>
+</section>
+
+<section>
+<h2>6. Percobaan 1 — Variasi Jarak</h2>
+<p>Gunakan medium udara. Coba jarak 10 m, 20 m, 30 m, 40 m, dan 50 m. Jalankan simulasi setiap kali mengubah jarak.</p>
+<table id="dataTable"><thead><tr><th>No.</th><th>Jarak (m)</th><th>Waktu (s)</th><th>v (m/s)</th></tr></thead><tbody></tbody></table>
+<div class="actions"><button onclick="addRow()">+ Tambah Baris</button><button class="secondary" onclick="fillExample()">Isi Data Contoh</button></div>
+</section>
+
+<section>
+<h2>7. Percobaan 2 — Perbandingan Medium</h2>
+<p>Pertahankan jarak 20 m. Uji udara, air, dan baja. Bandingkan waktu tempuhnya.</p>
+<table><thead><tr><th>Medium</th><th>Jarak (m)</th><th>Waktu (s)</th><th>v (m/s)</th></tr></thead>
+<tbody>
+<tr><td>Udara</td><td>20</td><td><input id="tu"></td><td><input id="vu"></td></tr>
+<tr><td>Air</td><td>20</td><td><input id="ta"></td><td><input id="va"></td></tr>
+<tr><td>Baja</td><td>20</td><td><input id="tb"></td><td><input id="vb"></td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2>8. Pertanyaan Analisis</h2>
+<ol>
+<li>Bagaimana perubahan waktu tempuh ketika jarak semakin besar?</li>
+<li>Apakah cepat rambat bunyi berubah ketika jarak diperbesar pada medium yang sama? Jelaskan.</li>
+<li>Medium mana yang memiliki cepat rambat paling besar?</li>
+<li>Mengapa bunyi merambat dengan kecepatan berbeda pada medium yang berbeda?</li>
+<li>Jika jarak sumber dan pengamat diperbesar dua kali, bagaimana perubahan waktu tempuh jika mediumnya tetap?</li>
+</ol>
+<textarea id="analisis" placeholder="Tuliskan jawaban analisis..."></textarea>
+</section>
+
+<section>
+<h2>9. Tugas Kontekstual</h2>
+<p>Seorang penonton berada 68 m dari sumber bunyi pada pertunjukan Sisingaan. Jika cepat rambat bunyi di udara 340 m/s, tentukan waktu yang diperlukan bunyi untuk mencapai penonton.</p>
+<div class="grid2">
+<div><label>Diketahui</label><textarea placeholder="Tuliskan data..."></textarea></div>
+<div><label>Penyelesaian</label><textarea placeholder="v = s/t ..."></textarea></div>
+</div>
+<label>Kesimpulan tugas</label><textarea placeholder="Tuliskan jawaban akhir..."></textarea>
+</section>
+
+<section>
+<h2>10. Kesimpulan</h2>
+<textarea id="kesimpulan" placeholder="Berdasarkan percobaan, saya menyimpulkan bahwa..."></textarea>
+<h3>Refleksi</h3>
+<textarea id="refleksi" placeholder="Hal yang saya pahami, menarik, atau masih membingungkan..."></textarea>
+</section>
+
+<div class="progress"><i id="prog"></i></div>
+<div class="small">Progress LKPD dihitung dari isian identitas dan jawaban.</div>
+<div class="actions">
+<button onclick="window.print()">🖨 Cetak LKPD</button>
+<button class="secondary" onclick="saveData()">💾 Simpan Data</button>
+<button class="danger" onclick="resetAll()">↻ Reset</button>
+</div>
+</div>
+
+<div class="panel right sim">
+<div class="simHead"><h2>🧪 Simulasi Cepat Rambat Bunyi</h2><span class="arbadge">AR / Kamera</span></div>
+<div class="stage">
+<video id="camera" autoplay playsinline muted></video>
+<div id="overlay">
+<div class="scene">
+<div class="distance"><span>Jarak sumber–pengamat: <b id="distLabel">20 m</b></span></div>
+<div class="source">🔊</div>
+<div class="listener">👂</div>
+<div class="line"></div>
+<div class="wave w1"></div><div class="wave w2"></div><div class="wave w3"></div><div class="wave w4"></div><div class="wave w5"></div>
+</div>
+</div>
+</div>
+
+<div class="controls">
+<div class="controlgrid">
+<div class="control">
+<label>Jarak sumber–pengamat <span class="value" id="dval">20 m</span></label>
+<input class="range" id="distance" type="range" min="5" max="100" value="20">
+</div>
+<div class="control">
+<label>Medium <span class="value" id="vlabel">340 m/s</span></label>
+<select id="medium">
+<option value="340">Udara — 340 m/s</option>
+<option value="1500">Air — 1.500 m/s</option>
+<option value="5000">Baja — 5.000 m/s</option>
+</select>
+</div>
+</div>
+<div class="actions">
+<button id="startBtn" onclick="startExperiment()">▶ Mulai Percobaan</button>
+<button class="secondary" onclick="pauseExperiment()">⏸ Jeda</button>
+<button class="gold" onclick="toggleCamera()">📷 Mode AR/Kamera</button>
+<button class="secondary" onclick="resetSim()">↻ Reset Simulasi</button>
+<button class="secondary" onclick="playSound()">🔊 Bunyi</button>
+</div>
+<div class="result">
+<div class="metric">Jarak<b id="rDist">20 m</b></div>
+<div class="metric">Waktu tempuh<b id="rTime">—</b></div>
+<div class="metric">Cepat rambat<b id="rSpeed">—</b></div>
+</div>
+<div class="status" id="status">Atur jarak dan medium, lalu mulai percobaan.</div>
+<canvas id="chart" width="700" height="170"></canvas>
+</div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let timer=null, running=false, audioCtx=null, rowNo=0;
+
+function calc(){const s=+$('distance').value,v=+$('medium').value;return {s,v,t:s/v}}
+function updateUI(){
+ const x=calc(); $('dval').textContent=x.s+' m'; $('distLabel').textContent=x.s+' m'; $('rDist').textContent=x.s+' m';
+ $('vlabel').textContent=Number(x.v).toLocaleString('id-ID')+' m/s';
+ $('rSpeed').textContent=Number(x.v).toLocaleString('id-ID')+' m/s';
+ drawChart(x);
+}
+$('distance').addEventListener('input',updateUI);
+$('medium').addEventListener('change',updateUI);
+
+function startExperiment(){
+ const x=calc(); running=true; clearTimeout(timer);
+ $('status').textContent='Gelombang bunyi sedang merambat menuju pengamat...';
+ $('rTime').textContent='mengukur...';
+ const start=performance.now(), duration=Math.max(300,x.t*1000);
+ function tick(){
+   if(!running)return;
+   const elapsed=(performance.now()-start)/1000;
+   $('rTime').textContent=elapsed.toFixed(3)+' s';
+   if(elapsed<duration){requestAnimationFrame(tick)}
+   else {running=false;$('rTime').textContent=x.t.toFixed(3)+' s';$('status').textContent='Percobaan selesai. Gunakan data ini untuk mengisi tabel LKPD.';addRow(x)}
+ }
+ requestAnimationFrame(tick);
+}
+function pauseExperiment(){running=false;$('status').textContent='Percobaan dijeda.'}
+function resetSim(){running=false;$('rTime').textContent='—';$('status').textContent='Atur jarak dan medium, lalu mulai percobaan.';updateUI()}
+function addRow(x=calc()){
+ rowNo++;
+ const tr=document.createElement('tr');
+ tr.innerHTML=`<td>${rowNo}</td><td><input value="${x.s}"></td><td><input value="${x.t.toFixed(3)}"></td><td><input value="${x.v}"></td>`;
+ $('dataTable').querySelector('tbody').appendChild(tr);
+}
+function fillExample(){[10,20,30,40,50].forEach(s=>addRow({s,v:340,t:s/340}))}
+function drawChart(x){
+ const c=$('chart'),ctx=c.getContext('2d'),w=c.width,h=c.height;
+ ctx.clearRect(0,0,w,h);ctx.strokeStyle='#9bb9cc';ctx.lineWidth=1;
+ ctx.beginPath();ctx.moveTo(45,15);ctx.lineTo(45,h-30);ctx.lineTo(w-15,h-30);ctx.stroke();
+ ctx.fillStyle='#203040';ctx.font='12px Arial';ctx.fillText('waktu (s)',w-80,h-10);ctx.fillText('jarak',8,20);
+ const maxS=100,maxT=maxS/x.v;
+ ctx.strokeStyle='#1d70b8';ctx.lineWidth=3;ctx.beginPath();
+ for(let i=0;i<=100;i++){const s=i;const t=s/x.v;const px=45+s/maxS*(w-65),py=(h-30)-t/maxT*(h-50);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
+ ctx.stroke();
+}
+async function toggleCamera(){
+ const cam=$('camera');
+ if(cam.style.display==='block'){cam.srcObject?.getTracks().forEach(t=>t.stop());cam.style.display='none';$('overlay').style.background='transparent';$('status').textContent='Mode simulasi 2D aktif.';return}
+ try{
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+  cam.srcObject=stream;cam.style.display='block';$('overlay').style.background='#0003';
+  $('status').textContent='Mode kamera aktif. Arahkan kamera ke area percobaan; simulasi tetap dapat digunakan sebagai overlay.';
+ }catch(e){alert('Kamera tidak dapat diakses. Gunakan mode simulasi 2D atau buka melalui HTTPS/localhost.')}
+}
+function playSound(){
+ const x=calc();audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+ const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=440;o.type='sine';g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.35);
+}
+function saveData(){
+ const data={nama:$('nama').value,kelas:$('kelas').value,kelompok:$('kelompok').value,tanggal:$('tanggal').value,analisis:$('analisis').value,kesimpulan:$('kesimpulan').value,refleksi:$('refleksi').value};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='LKPD_Cepat_Rambat_Bunyi.json';a.click();URL.revokeObjectURL(a.href);
+}
+function resetAll(){if(confirm('Reset seluruh isian LKPD dan simulasi?'))location.reload()}
+function progress(){
+ const ids=['nama','kelas','kelompok','tanggal','analisis','kesimpulan','refleksi'];let n=ids.filter(i=>$(i).value.trim()).length;
+ $('prog').style.width=(n/ids.length*100)+'%';
+}
+document.addEventListener('input',progress);document.addEventListener('change',progress);
+updateUI();addRow({s:20,v:340,t:20/340});
+</script>
+</body>
+</html>
